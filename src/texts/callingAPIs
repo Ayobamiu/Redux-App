@@ -1,0 +1,48 @@
+Approach
+
+We don't want to call APIs in our reducers. because calling APIs involves functions with side-effects.
+
+we call APIs in our ActionCreators, normally ActionCreators returns objects, but with the help of Thunk middleWare, we can return functions. So, in the function, we can encapsulate codes with side-effects.
+
+function actionCreator () {
+    return function (getState, dispatch) {
+
+    }
+}
+
+re-written as:
+for example, getting Bugs from the server;
+
+import axios from 'axios';
+
+const api = ({getState, dispatch}) => next => async action => {
+    if (action.type !== apiCallbegan) return next(action)
+    next(action);
+
+    const { url, method, data, onSuccess, onError } = action.payload  
+    try{
+        const response = await axios.request({
+            baseURL,
+            url,
+            method,
+            data
+        })
+        dispatch({ type: onSuccess, payload: response.data});
+    } catch (error) {
+        dispatch({ type: onError, payload: error});
+    }
+}
+
+to dispatch this;
+
+store.dispatch({
+    type: "apiCallbegan",
+    payload: {
+        url: "/bugs",
+        method: "post",
+        onSuccess: "bugRecieved",
+        onError: "apiCallFailed"
+    }
+})
+
+This method is repetitive, we can use middleWare to make it more efficient.

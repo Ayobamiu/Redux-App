@@ -1,0 +1,1004 @@
+Steps to build a Redux Application
+1. Design the store - decide what to keep in the store
+2. Define the actions - what are the actions the user can perform
+                        in this application?
+3. Create One or more reducers - they take actions and return
+                                updated state
+4. Set up the store base on the Reducer
+
+INSTALL REDUX -- npm i redux
+
+1. Our store is an Array [] with objects of bugs
+store = [
+  {
+    id : 1,
+    description : "Bug 1",
+    resolved : false
+  },
+  {
+    id : 2,
+    description : "Bug 2",
+    resolved : false
+  },
+]
+
+2. Actions
+An action is an object conataining one or more entries. first entry is the type e.g. bugAdded and may conatain payload. payload is an object containing properties needed for the action.
+
+e.g. 
+const bugAdded = {
+  type : "bugAdded",
+  payload : {
+    description : "first bug",
+    resolved : false
+  }
+}
+
+To make dispatching easy, lets create actionCreators. ActionCreators are functions that returns actions.
+
+Create actionTypes.js containing actions
+
+export const BUG_ADDED = "bugAdded";
+export const BUG_REMOVED = "bugRemoved";
+export const BUG_RESOLVED = "bugResolved";
+
+Create actionCreators.js containing funtions that returns actions
+
+import * as actions from "./actionTypes";
+
+export const bugAdded = (description) => ({
+  type: actions.BUG_ADDED,
+  payload: {
+    description,
+  },
+});
+
+export const bugRemoved = (id) => ({
+  type: actions.BUG_REMOVED,
+  payload: {
+    id,
+  },
+});
+
+export const bugResolved = (id) => ({
+  type: actions.BUG_RESOLVED,
+  payload: {
+    id,
+  },
+});
+
+
+3. CREATE REDUCER reducer.js
+
+A reducer is a function that takes the state and action and returns a new updated state
+
+import * as actions from "./actionTypes";
+
+let lastId = 0;
+
+export default function reducer(state = [], action) {
+  switch (action.type) {
+    case actions.BUG_ADDED:
+      return [
+        ...state,
+        {
+          id: ++lastId,
+          description: action.payload.description,
+          resolved: false,
+        },
+      ];
+    case actions.BUG_REMOVED:
+      return state.filter((bug) => bug.id !== action.payload.id);
+    case actions.BUG_RESOLVED:
+      const index = state.findIndex((bug) => bug.id === action.payload.id);
+      state[index].resolved = true;
+    default:
+      return state;
+  }
+}
+
+STEP 4 -- CREATE STORE store.js
+Create store with the reducer created, we can have more than one reducer
+
+import { configureStore } from "@reduxjs/toolkit";
+
+import reducer from "./bugs";
+
+export default function() {
+  return configureStore({reducer});
+}
+
+----------- This is the basic setting for store-reducer redux -----------------
+
+Lets try all the function the store provides.
+- dispatch: to dispatch actions
+- getState: to get current state
+- subscribe: it is called anytime the state changes. when working with UI, this is where you refresh the view. If you are building an App with React, the is where you re-render when the state changes.
+
+This return an unsubscribe method for unsubscribing from the store. when you call unsubscribe(), you stop the action of subscribe method.
+
+- replaceReducer
+- symbol
+
+index.js
+import store from "./practice/store";
+import { bugAdded, bugRemoved, bugResolved } from "./practice/actionCreators";
+
+// Not compulsory
+const unsubscribe = store.subscribe(() => {
+  console.log("State has changed!!", store.getState());
+});
+
+store.dispatch(bugAdded("first bug"));
+store.dispatch(bugAdded("second bug"));
+store.dispatch(bugAdded("Third bug"));
+store.dispatch(bugResolved(2));
+
+console.log(store.getState());
+
+
+--WRITING CLEANER CODE--
+
+DUCKS PATTERN
+
+Using ducks pattern, we'd put our actionCreators.js, actionTypes.js and reducer.js in one file, say, bug.js
+
+NOTE: when using ducks pattern, reducer must be the default export. And we must export individual actionCreators
+
+
+We've deleted actionCreators.js, actionTypes.js and reducer.js. Now we have bugs.js
+
+//Action Types
+const BUG_ADDED = "bugAdded";
+const BUG_REMOVED = "bugRemoved";
+const BUG_RESOLVED = "bugResolved";
+
+//Action Creators
+export const bugAdded = (description) => ({
+  type: BUG_ADDED,
+  payload: {
+    description,
+  },
+});
+
+export const bugRemoved = (id) => ({
+  type: BUG_REMOVED,
+  payload: {
+    id,
+  },
+});
+
+export const bugResolved = (id) => ({
+  type: BUG_RESOLVED,
+  payload: {
+    id,
+  },
+});
+
+//Reducers
+let lastId = 0;
+
+export default function reducer(state = [], action) {
+  switch (action.type) {
+    case BUG_ADDED:
+      return [
+        ...state,
+        {
+          id: ++lastId,
+          description: action.payload.description,
+          resolved: false,
+        },
+      ];
+    case BUG_REMOVED:
+      return state.filter((bug) => bug.id !== action.payload.id);
+    case BUG_RESOLVED:
+     return state.map(bug => bug.id !== action.payload.id? bug: {...bug, resolved=true})
+    default:
+      return state
+  }
+}
+
+For no reason yet, lets change store.js to configureStore.js
+
+Inside, configureStore.js lets create export default function that returns store.
+
+import { configureStore } from "@reduxjs/toolkit";
+
+import reducer from "./bugs";
+
+export default function() {
+  return configureStore({reducer});
+}
+
+
+--WRITING SIMPLER CODE--
+With redux toolkit, we can create actionCreators simpler. 
+
+bugs.js
+
+we dont need actionTypes anymore
+
+//Action Creators
+export const bugAdded = createAction("bugAdded");
+export const bugRemoved = createAction("bugRemoved");
+export const bugResolved = createAction("bugResolved");
+
+//Reducers
+let lastId = 0;
+
+export default function reducer(state = [], action) {
+  switch (action.type) {
+    case bugAdded.type:
+      return [
+        ...state,
+        {
+          id: ++lastId,
+          description: action.payload.description,
+          resolved: false,
+        },
+      ];
+    case  bugRemoved.type:
+      return state.filter((bug) => bug.id !== action.payload.id);
+    case bugResolved.type:
+      return state.map((bug) =>
+        bug.id !== action.payload.id ? bug : { ...bug, resolved: true }
+      );
+    default:
+      return state;
+  }
+}
+
+with these changes, the parameters we pass to dispatch methods must be in object form.
+
+index.js
+
+import configureStore from "./practice/configureStore";
+import { bugAdded, bugRemoved, bugResolved } from "./practice/bugs";
+
+const store = configureStore();
+// Not compulsory
+const unsubscribe = store.subscribe(() => {
+  console.log("State has changed!!", store.getState());
+});
+
+store.dispatch(bugAdded({ description: "first bug" }));
+store.dispatch(bugAdded({ description: "second bug" }));
+
+store.dispatch(bugAdded({ description: "Third bug" }));
+store.dispatch(bugResolved({ id: 2 }));
+
+console.log(store.getState());
+
+
+With redux toolkit, we can also create reducers simpler. 
+
+createReducer is a function that takes in two args. first is initial state and second is a {key : value} matching actions to functions that handle those functions
+e.g. 
+
+createReducer( [], { action : () => {
+  console.log("createReducer")
+})
+
+//Reducers
+let lastId = 0;
+
+export default createReducer([], {
+  [bugAdded.type]: (bugs, action) => {
+    bugs.push({
+      id: ++lastId,
+      description: action.payload.description,
+      resolved: false,
+    });
+  },
+  [bugRemoved.type]: (bugs, action) => {
+    bugs.pop((bug) => bug.id !== action.payload.id);
+  },
+  [bugResolved.type]: (bugs, action) => {
+    const index = bugs.findIndex((bug) => bug.id === action.payload.id);
+    bugs[index].resolved = true;
+  },
+});
+
+This is the simplest yet.
+
+We can take it a step further, using createSlice from redux toolkit. createSlice merge the function of createAction and createReducer
+
+createSlice takes a configuration object, the configuration object has some properties name, initial state and reducer. reducer here maps actions to action handlers.
+
+import {createSlice } from "@reduxjs/toolkit";
+
+let lastId = 0;
+
+const slice = createSlice({
+  name: "bugs",
+  initialState: [],
+  reducers: {
+    //action : action handler
+    bugAdded: (bugs, action) => {
+      bugs.push({
+        id: ++lastId,
+        description: action.payload.description,
+        resolved: false,
+      });
+    },
+    bugRemoved: (bugs, action) => {
+      bugs.pop((bug) => bug.id !== action.payload.id);
+    },
+    bugResolved: (bugs, action) => {
+      const index = bugs.findIndex((bug) => bug.id === action.payload.id);
+      bugs[index].resolved = true;
+    },
+  },
+});
+
+export const { bugAdded, bugRemoved, bugResolved } = slice.actions;
+
+export default slice.reducer;
+
+createSlice makes it easy to add actions, actionCreators and reducers in a single file.
+
+Lets create another slice to handle projects, the former only handle bugs.
+
+--create projects.js
+import { createSlice } from "@reduxjs/toolkit";
+
+let lastId = 0;
+
+const slice = createSlice({
+  name: "projects",
+  initialState: [],
+  reducers: {
+    projectAdded: (projects, action) => {
+      projects.push({
+        id: ++lastId,
+        name: action.payload.name,
+      });
+    },
+  },
+});
+
+export const { projectAdded } = slice.actions;
+
+export default slice.reducer;
+
+--import reducer in configureStore.js
+import { configureStore } from "@reduxjs/toolkit";
+
+// import reducer from "./bugs";
+import reducer from "./projects";
+
+export default function () {
+  const store = configureStore({ reducer });
+  return store;
+}
+
+-- dispatch actions in index.js
+import configureStore from "./practice/configureStore";
+import { bugAdded, bugRemoved, bugResolved } from "./practice/bugs";
+import { projectAdded } from "./practice/projects";
+
+const store = configureStore();
+// Not compulsory
+const unsubscribe = store.subscribe(() => {
+  console.log("State has changed!!", store.getState());
+});
+
+store.dispatch(projectAdded({ name: "first project" }));
+console.log(store.getState());
+
+--we've covered fundamentals in Redux. Lets learn how to Design the store
+
+Next, lets learn how to register multiple reducers in our store
+
+-- create reducer.js
+
+import { combineReducers } from "redux";
+import bugsReducer from "./bugs";
+import projectsReducer from "./projects";
+
+export default combineReducers({
+  bugs: bugsReducer,
+  projects: projectsReducer,
+});
+
+
+-- In store.js, use the combineReducers
+import { configureStore } from "@reduxjs/toolkit";
+
+// import reducer from "./bugs";
+// import reducer from "./projects";
+import reducer from "./reducer";
+
+export default function () {
+  const store = configureStore({ reducer });
+  return store;
+}
+
+Now, we have two slices handled in our store.
+The goal is to have an entity slice handling both projects and bugs. i.e.
+entities : {
+  bugs : [],
+  projects : []
+}
+
+to do this, create entities.js and move contents of current reducers.js. Then import it in reducers.js i.e.
+
+--entities.js
+
+import { combineReducers } from "redux";
+import bugsReducer from "./bugs";
+import projectsReducer from "./projects";
+
+export default combineReducers({
+  bugs: bugsReducer,
+  projects: projectsReducer,
+});
+
+--reducers.js
+
+import { combineReducers } from "redux";
+import entitiesReducer from "./entities";
+
+export default combineReducers({
+  entities: entitiesReducer,
+});
+
+
+
+-- SELECTORS
+
+selectors are used to get certains parts of the state. like 
+const unresolvedBugs = store
+  .getState()
+  .entities.bugs.filter((bug) => !bug.resolved);
+const resolvedBugs = store
+  .getState()
+  .entities.bugs.filter((bug) => bug.resolved);
+
+We will include this after exporting our default reducer. with better code
+
+bugs.js
+
+//Selector
+//Selector is a function that takes the state and return a computed state.
+export const getUnresolvedBugs = (state) =>
+  state.entities.bugs.filter((bug) => !bug.resolved);
+
+
+
+This selector is not very good because it returns a new array every time it is called. 
+i.e.
+
+const x = getUnresolvedBugs(state.getState())
+const y = getUnresolvedBugs(state.getState())
+console.log(x===y) //false
+
+Lets do Memoization to address that issue.
+
+With Memoization, if our state is not changed, components will not re-render. If state is not changed, we get data from cache.
+
+npm i reselect
+
+in bugs.js
+import { createSelector } from 'reselect';
+
+after we export our reducer, 
+
+export const getUnresolvedBugs = createSelector(
+  (state) => state.entities.bugs,
+  (bugs) => bugs.filter((bug) => !bug.resolved)
+);
+
+in the code above: we passed state, and we got bugs, i.e. state.entities.bugs. This bugs is then passed down to what we call reslut funtion. After that we get unresolvedBugs from the reslut funtion. With this, if the bugs doesn't changed, our unresolvedBugs won't change, we will get it from cache.
+
+We can augment this function, we can make it such that the data re-render based on more than 'if bugs changed'.
+
+export const getUnresolvedBugs = createSelector(
+  (state) => state.entities.bugs,
+  (state) => state.entities.projects,
+  (bugs, projects) => bugs.filter((bug) => !bug.resolved)
+);
+
+with this, unresolvedBugs are re-rendered when one of bugs and projects changes.
+
+
+--- USER SLICE
+import { createSlice } from "@reduxjs/toolkit";
+
+let lastId = 0;
+
+const slice = createSlice({
+  name: "users",
+  initialState: [],
+  reducers: {
+    userAdded: (users, action) => {
+      users.push({
+        id: ++lastId,
+        name: action.payload.name,
+      });
+    },
+  },
+}); 
+
+export const { userAdded } = slice.actions;
+
+export default slice.reducer;
+
+
+MIDDLEWARE-- {actions --> middleware --> store}
+Middleware is a piece of code that gets executed after an action is called and before it reaches the root reducer.
+
+//SNA
+const logger = (store) => (next) => (action) => {
+  console.log("store", store);
+  console.log("next", next);
+  console.log("action", action);
+};
+NOTE: middlewares take store, next and action. SNA
+
+
+export default logger;
+
+This is the simplest implementation of middleware. To use it, lets register it with our store.
+
+import { configureStore } from "@reduxjs/toolkit";
+import logger from "./middlewares/logger";
+
+import reducer from "./reducer";
+
+export default function () {
+  const store = configureStore({ reducer, middleware: [logger] });
+  return store;
+}
+
+With this, actions are logged when they are called. But they don't get executed.
+
+To parameterize the middleware; on default, messages from the middleware are logged to the console. In production, this won't work. So, we need to pass a parameter to the middleware specifying where to logged messages.
+
+export default function () {
+  const store = configureStore({ reducer, middleware: [logger("console")] });
+  return store;
+}
+
+with this, there is a problem, the logger will turn store, its first arg to "console" i.e.
+
+const logger = ("console") => (next) => (action) => {
+  console.log("store", store);
+  console.log("next", next);
+  console.log("action", action);
+  next(action);
+};
+
+To fix this,
+const logger = (param) => (store) => (next) => (action) => {
+  console.log("param", param);
+  next(action);
+};
+
+
+--- dispatching functions----
+currently, our store cannot dispatch functions,
+if you pass ,say, store.dispatch(() => {});
+
+you'll get an error;
+Uncaught Error: Actions must be plain objects. Use custom middleware for async actions.
+
+To get it working, we can write middleware that allows us to pass functions or we can use an npm module redux-thunk
+
+Now, change our configureStore file.
+import { configureStore, getDefaultMiddleware } from "@reduxjs/toolkit";
+export default function () {
+  const store = configureStore({
+    reducer,
+    middleware: [...getDefaultMiddleware(), logger("console")],
+  });
+  return store;
+} 
+
+
+-- CALLING APIS----
+We dont pass function to actions, action take state and return a computed state, nothing more.
+
+We can only call APIs in actionCreators.
+functions actionCreator(){
+  return function(dispatch){
+
+  }
+}
+
+const actionCreator = () => (dispatch) => {
+  //Call APIs
+  //Resolved : dispatch(succes)
+  //Rejected : dispatch(error)
+}
+The problem with this implementation is that it is repeatitive.
+We can use a middleware function
+
+create apis.js at /middleware/apis.js
+
+The smallest implementation of api call
+import axios from "axios";
+
+const api = ({ dispatch }) => (next) => async (action) => {
+  if (action.type !== "apiCallBegan") {
+    return next(action);
+  }
+
+  next(action);
+  const { url, method, data, onError, onSuccess } = action.payload;
+  try {
+    const response = await axios.request({
+      baseURL: "http://localhost:9001/api",
+      url,
+      method,
+      data,
+    });
+    dispatch({ type: onSuccess, payload: response.data });
+  } catch (error) {
+    dispatch({ type: onError, payload: error });
+  }
+};
+
+export default api;
+
+And in index.js, 
+
+const store = configureStore();
+
+store.dispatch({
+  type: "apiCallBegan",
+  payload: {
+    url: "/bugs",
+    onSuccess: "bugsReceived",
+    onError: "apiRequestFailed", 
+  },
+});
+
+We can make the code simpler and more efficient
+Lets create actionCreators, 
+
+create /practice/api.js
+import { createAction } from "@reduxjs/toolkit";
+
+export const apiCallBegan = createAction("api/CallBegan");
+export const apiCallSuccess = createAction("api/CallSuccess");
+export const apiCallFailed = createAction("api/CallFailed");
+
+In index.js
+
+import * as actions from "./practice/api";
+
+const store = configureStore();
+
+store.dispatch(
+  actions.apiCallBegan({
+    url: "/bugs",
+    onSuccess: "bugsReceived",
+    onError: actions.apiCallFailed.type,
+  })
+); 
+
+-- RESTRUCTURING THE STORE ---
+
+
+
+currently, after we call the api 'get' endpoint, we dont automatically update our state.
+
+now, lets add a reducer to handle that.
+
+bugsReceived: (bugs, action) => {
+    bugs.list = action.payload;
+},
+
+Edit index.js to make that possible
+store.dispatch(
+  actions.apiCallBegan({
+    url: "/bugs",
+    // method:"get", //method is "get" by default
+    onSuccess: "bugs/bugsReceived",
+    onError: actions.apiCallFailed.type,
+  })
+);
+
+
+With this implementation, it works, but if we need to 'get' bugs another, we'll need to repeat the same implementation. Lets automate that.
+
+Lets write an ActionCreator to load bugs.
+
+after we export reducer from bugs.js
+//Action creators
+
+export const loadBugs = () =>
+  apiCallBegan({
+    url: "/bugs",
+    onSuccess: bugsReceived.type,
+  });
+
+-- HANDLE LOADING --
+- add a reducer bugsRequested and set payload {loading: true} and after bugs are received, set it to false.
+  bugsRequested: (bugs, action) => {
+      bugs.loading = true;
+    },
+  bugsReceived: (bugs, action) => {
+      bugs.list = action.payload;
+      bugs.loading = false;
+    },
+    
+- pass it as payload to loadBugs actionCreator.
+  export const loadBugs = () =>
+  apiCallBegan({
+    url: "/bugs",
+    onStart: bugsRequested.type,
+    onSuccess: bugsReceived.type,
+  });
+- dispatch onStart before making api call in the api middleware.
+  import axios from "axios";
+import * as actions from "../api";
+
+const api = ({ dispatch }) => (next) => async (action) => {
+  if (action.type !== actions.apiCallBegan.type) return next(action);
+
+  next(action);
+  const { url, method, data, onStart, onError, onSuccess } = action.payload;
+  if (onStart) dispatch({ type: onStart });
+  try {
+    const response = await axios.request({
+      baseURL: "http://localhost:9001/api",
+      url,
+      method,
+      data,
+    });
+    //General
+    dispatch(actions.apiCallSuccess(response.data));
+    //Specific
+    if (onSuccess) dispatch({ type: onSuccess, payload: response.data });
+  } catch (error) {
+    //General
+    dispatch(actions.apiCallFailed(error));
+    //Specific
+    if (onError) dispatch({ type: onError, payload: error });
+  }
+};
+
+export default api;
+
+
+If there is an error, loading still remains true,
+lets write a reducer bugsRequestFailed to set it to false and we'd call it onError
+
+ bugsRequestFailed: (bugs, action) => {
+      bugs.loading = false;
+    },
+
+//Action creators
+
+export const loadBugs = () =>
+  apiCallBegan({
+    url: "/bugs",
+    onStart: bugsRequested.type,
+    onSuccess: bugsReceived.type,
+    onError: bugsRequestFailed.type,
+  });
+
+
+
+--- Caching ---
+Anytime we received bugs from server, lets set lastFetch to current time
+
+bugsReceived: (bugs, action) => {
+      bugs.list = action.payload;
+      bugs.loading = false;
+      bugs.lastFetch = Date.now();
+    },
+
+So, in the loadBugs ActionCreator, if the lastFetch time is less than 10 minutes, we'll get data from cache
+
+
+//Action creators
+
+export const loadBugs = () => (dispatch, getState) => {
+  const { lastFetch } = getState().entities.bugs;
+  //Get diff from lastFetch to current time in minutes
+  const diffInMinutes = moment().diff(moment(lastFetch), "minutes");
+  if (diffInMinutes < 10) return;
+  dispatch(
+    apiCallBegan({
+      url: "/bugs",
+      onStart: bugsRequested.type,
+      onSuccess: bugsReceived.type,
+      onError: bugsRequestFailed.type,
+    })
+  );
+};
+
+-- SAVING TO THE SERVER --
+export const addBug = (bug) =>
+  apiCallBegan({
+    url: "/bugs",
+    method: "post",
+    data: bug,
+    onSuccess: bugAdded.type,
+  });
+
+The server returns a payload 
+
+id(pin):1604708969252
+resolved(pin):false
+description(pin):"Test save"
+
+we can then re-write bugAdded to save action.payload
+ bugAdded: (bugs, action) => {
+      bugs.list.push(action.payload);
+    },
+and we no longer need lastId
+
+We have addBug and bugAdded 
+addBug - command (actionCreator)
+bugAdded - event (actionCreator)
+
+lets do the same to resolveBug and bugResolved
+
+Lets create a new actionCreator, resolveBug
+export const resolveBug = (id) =>
+  apiCallBegan({
+    url: "/bugs/" + id,
+    method: "patch",
+    data: { resolved: true },
+    onSuccess: bugResolved.type,
+  });
+
+
+ -- INTEGRATION WITH REACT --
+ Move the store folder, in our case, practice folder to the scr folder of the react project
+
+ import configureStore from './practice/configureStore'
+
+ const store = configureStore()
+
+ To connect our store to our React App we'll use React context.
+
+ With React context we can provide an object at top of our components tree and every object will be able to access the object.
+
+ create a folder in src, contexts and file storeContext.js
+
+ in storeContext.js
+
+ import { createContext } from "react";
+
+const StoreContext = createContext();
+
+export default StoreContext;
+
+Now, lets wrap our entire App component with a provider component. With the provider, we'll provide an Object to our components tree.
+
+the provider has a prop called value, the value is the object you want to provide for the tree. In our case, our object is our store.
+
+import Tasks from "./Tasks";
+import StoreContext from "./contexts/storeContext";
+import configureStore from "./practice/configureStore";
+
+const store = configureStore();
+
+function App() {
+  return (
+    <StoreContext.Provider value={store}>
+      <Tasks />
+    </StoreContext.Provider>
+  );
+}
+
+For our Tasks.js to use the store passed, import StoreContext and set
+static contextType = StoreContext;
+
+import React, { Component } from "react";
+import StoreContext from "./contexts/storeContext";
+
+class Tasks extends Component {
+  static contextType = StoreContext;
+  componentDidMount() {
+    console.log(this.context);
+  }
+  render() {
+    return <></>;
+  }
+}
+
+export default Tasks;
+
+-- store context as store 
+-- call store.subscribe, we give it a function. The function gets called every time an action is dispatched
+
+  componentDidMount() {
+    const store = this.context;
+
+    this.unsubscribe = store.subscribe(() => {
+      const bugInStore = store.getState().entities.bugs.list;
+      if (this.state.bugs !== bugInStore) this.setState({ bugs: bugInStore });
+    });
+  }
+-- unsubscribe from the store when component is unmounting 
+-- load bugs after subscribing to the store
+  import { loadBugs } from "./practice/bugs";
+  componentDidMount() {
+    const store = this.context;
+
+    this.unsubscribe = store.subscribe(() => {
+      const bugInStore = store.getState().entities.bugs.list;
+      if (this.state.bugs !== bugInStore) this.setState({ bugs: bugInStore });
+    });
+
+    store.dispatch(loadBugs());
+  }
+-- render bugs
+   render() {
+    return (
+      <>
+        {this.state.bugs.map((bug) => (
+          <p>{bug.description}</p>
+        ))}
+      </>
+    );
+  }
+
+This works well but it is tedious. A library called react-redux takes care of the complexity for us and makes it easier.
+
+npm i react-redux
+
+Use Provider from react-redux library
+-- wrap App component with Provider from react-redux
+-- it takes prop "store" unlike "value" in the case of StoreContext.Provider
+  import Tasks from "./Tasks";
+  import configureStore from "./practice/configureStore";
+  import { Provider } from "react-redux";
+
+  const store = configureStore();
+
+  function App() {
+    return (
+      <Provider store={store}>
+        <Tasks />
+      </Provider>
+    );
+  }
+
+  export default App;
+
+-- with this we dont need to subscribe and unsubscribe from store, we dont need context and we dont need local state.
+-- we get the bugs as this.props.bugs unlike this.state.bugs
+-- instead exporting Bugs, we'll wrap in a function 'connect'. This     connect function will subscribe and unsubscribe from the store later
+  connect() takes two args. First, the part of the store you are interested in. Second, for dispatching actions
+-- define mapStateToProps, mapStateToProps takes the state and returns the part of the state we are interested in
+-- define matchDispatchToProps, matchDispatchToProps takes the dispatch function of the store and match it to the props of our component
+-- pass mapStateToProps and matchDispatchToProps as args to connect()
+
+  import React, { Component } from "react";
+  import { loadBugs } from "./practice/bugs";
+  import { connect } from "react-redux";
+
+  class Bugs extends Component {
+    componentDidMount() {}
+    render() {
+      return (
+        <>
+          {this.props.bugs.map((bug) => (
+            <p key={bug.id}>{bug.description}</p>
+          ))}
+        </>
+      );
+    }
+  }
+  const mapStateToProps = (state) => ({
+    bugs: state.entities.bugs.list,
+  });
+
+  const matchDispatchToProps = (dispatch) => ({
+    loadBugs: () => dispatch(loadBugs()),
+  });
+
+  connect(mapStateToProps, matchDispatchToProps);
+  export default Bugs;
+
+-- connect() is an higher order function. when we call connect() we get  a function, we can then pass it another function bugs
+  connect(mapStateToProps, matchDispatchToProps)(Bugs). This will take care of subscribing and unsubscribing from the store
+-- export the higher function as the default component.
+  export default connect(mapStateToProps, matchDispatchToProps)(Bugs);

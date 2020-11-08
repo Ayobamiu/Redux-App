@@ -1,0 +1,45 @@
+Functional programming: a programming paradigm where programs are constructed by applying and composing functions
+
+e.g.
+ 
+const trimText = text => text.trim()
+const lowerCaseText = text => text.toLowerCase()
+const wrapInDiv = text => `<div>${text}</div>`
+
+const theText = wrapInDiv(lowerCaseText(trimText("  I am a champ  ")));
+console.log(theText);
+
+wrapInDiv is an example of a nested function.
+
+Dealing with many parenthesis will be a problem when we are dealing with multiple functions. So, we have Lodash come to the rescue.
+
+Lodash: 
+
+a javaScript library for Functional programming
+two functions from Lodash; compose and pipe are use for simplifying Functional programming.
+
+compose and pipe are examples of Higher-Order-Function because they take other function(s) as argument(s).
+
+Using compose, we can implement the combined functions in a simpler way. The previous function takes the output of next function as input.
+
+const transform = compose(wrapInDiv, lowerCaseText, trimText);
+console.log(transform(rawText));
+
+Pipe function combine functions also, but allow us to list them from left to right. i.e.
+The next function takes the output of previous function as input.
+
+const leftToRightFunction = pipe(trimText, lowerCaseText,wrapInDiv);
+console.log(leftToRightFunction(rawText));
+
+pipe and compose doesn't allow us to pass string or any object type as argument, only functions.
+
+Currying
+
+Currying is another Functional programming technique. it allows us pass multiple functions with multiple arguments. Here, we separate arguments Using parenthesis instead of commas.
+
+const rawText = "  I am a champ  "
+const wrapInDiv = type => text => `<${type}>${text}</${type}>`
+
+console.log(wrapInDiv('div')(rawText));
+
+

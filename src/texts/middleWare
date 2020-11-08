@@ -1,0 +1,43 @@
+Actions and Thunk
+middleware actions takes place between when we call an action before it gets to the reducer. So, we can carry out such operations such as authorization and documentation.
+i.e. between when an action is called and when it gets to the reducer, we can access if it is authorized. And stop it if not or allow it to continue if it is.
+
+Actions passed to our store must be a plain object with a type object.
+i.e.
+acton = {
+    type: "bugAdded",
+    payload:{
+        id:1
+    }
+}
+
+But we may need to pass a function in cases like; when calling an API and we need to dispatch our response. In this case, redux throws an error, requiring us to use a custom middleware to perform async actions.
+A solution to this is to write a middleware function like this;
+
+const func = ({dispatch, getState}) => next => action => {
+    if(typeof action === 'function')
+        action(dispatch, getState);
+    else
+        next(action);
+}
+
+export default func;
+
+with a middleware function like func, we can dispatch a function.
+
+Here, func is instructing redux that if our action is of the type "function", it should call the function. Else, if its a plain object type, it should pass it as an argument to next() which is the reducer in this case.
+
+This will be very redundant and we need to write a lot of code when dealing with multiple async actions. Thunk, a custom middleware function. It comes automatically when you are using reduxToolKit in your application otherwise, you need to manually Install and register it as a middleware function.
+
+
+    import { configureStore, getDefaultMiddleware } from '@reduxjs/toolkit';
+
+    configureStore({
+        reducer: reducer,
+        middleware: [
+            ...getDefaultMiddleware,
+            otherMiddlewares
+        ]
+
+    })
+

@@ -1,0 +1,106 @@
+/* Redux:
+
+- Reducer --
+const lastId = 0
+function reducer(state = [], action){
+    switch(action.type){
+        case 'budAdded':
+            return[
+                ...state,
+                {
+                    id: ++lastId,
+                    description: action.payload.description,
+                    resolved:false
+                }
+            ]
+        case 'budRemoved' :
+            return state.filter(bug => bug.id!== action.payload.id)
+        case 'bugResolved':
+            return state.map(bug => 
+                bug.id===action.payload.id ? {...bug, resolved:true} : bug)
+        default:
+            return state;
+
+    };
+}
+
+- Store = []
+
+
+
+npm i redux-thunk
+
+To use Thunk from reduxToolKit, you need to import a function called getDefaultMiddleware and 
+pass it to the middleware array.
+i.e.
+
+export default function () {
+    return configureStore({ 
+        reducer,
+        middleware: [
+            ...getDefaultMiddleware(),
+            otherMiddlewareFunctions,        
+        ]
+    });
+}
+
+we use the spread operator (...) for the getDefaultMiddleware because it is an array of middleware
+functions and we need to copy the array.
+
+
+Making API calls
+
+Because reducers should be pure, they should getState and return new state,
+we don't want to make API calls in the reducers. We make API calls in the 
+actionCreators. Traditionally, action returns a plain object, but with the 
+Thunk middleware, we can return a function
+
+- create a middleware function
+
+
+Testing Redux Applications (automated test)
+3 types:
+- Unit Test - test the application without it external Dependencies, using mock API
+- Integrated test: test the application with its external Dependencies, using real API
+- End-to-end tests: launching the application and driving it through its user interface
+
+Install libraries (as DevDependencies, because we don't want to ship them 
+during production).
+
+Install(latest versions): 
+    "@babel/core": "^7.10.2",
+    "@babel/preset-env": "^7.10.2",
+    "@types/jest": "^26.0.0",
+    "babel-jest": "^26.0.1",
+    "jest": "^26.0.1",
+
+Now create a file in the root of the project, outside the root folder, right
+next to package.json file;
+    babel.config.json
+
+Create a test file in the root folder.
+if a file as .spec in it, it means its a test file.
+
+Write the function you want to test in a separate file and import it in the 
+test file. in my case;
+
+i ran my function in math.js and imported it inside math.spec.js
+
+math.js:
+export const isEven = number => number % 2 === 0;
+
+math.spec.js:
+import { isEven } from './math';
+
+it("first test", ()=> {
+    const result = isEven(2);
+    expect(result).toEqual(true);
+});
+
+The function we are testing is refered to as "Function under test" 
+or System under Test(SUT).
+
+We can turn our Integrated test to unit test by creating a mock backend in our application.
+
+Install with npm i axios-mock-adapter
+

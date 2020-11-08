@@ -1,0 +1,32 @@
+We can configure our store in many ways
+1. store\
+    bugs\
+        actions.js
+        actionTypes.js
+        reducer.js
+    projects\
+        actions.js
+        actionTypes.js
+        reducer.js
+    auth\
+        actions.js
+        actionTypes.js
+        reducer.js
+2.  store\
+        bugs.js
+        projects.js
+        auth.js
+
+Method No 2 is called Dusk pattern, where we put our actions, actionTypes and reducers in one single file. That makes debugging easier.
+
+When using Method 2;
+    1. Export your reducer as the default Export
+    2. Export individual action Creators
+    3. No need to export the actionTypes
+
+Creating Store.
+1. using createStore 
+    import { createStore } from 'redux';
+    const store = createStore(reducer, **middleware, **reduxDevTools);
+
+2. using configureStore

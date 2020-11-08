@@ -1,0 +1,126 @@
+ReduxToolKit provides some functions to make Redux codes simpler
+    -configureStore
+    -createAction
+    -createReducer
+    -createSlice
+
+
+1. configureStore
+ createStore.
+        when using createStore for creating our store, we need to manually import applyMiddleware to perform asynchronous actions, we need to manually import devToolEnhancer to allow our store talk to reduxDevTool.
+
+ configureStore.
+        when using configureStore, our applyMiddleware and devToolEnhancer are automatically imported. we don't need to import them
+
+2. createAction
+    Traditionally,
+    //Actions
+    export const bugAdded = "bugAdded"
+    export const bugRemoved = "bugRemoved"
+    export const bugResolved = "bugResolved"
+
+    //Action Creators
+
+    const bugAdded = (description) => ({
+        type: bugAdded,
+        payload: {
+            description
+        }
+    })
+
+    const bugRemoved = (id) => ({
+        type: bugRemoved,
+        payload: {
+            id
+        }
+    })
+
+    const bugResolved = (id) => ({
+        type: bugResolved,
+        payload: {
+            id
+        }
+    })
+
+    Using createAction;
+    //createActions
+    export const bugAdded = createAction("bugAdded")
+    export const bugRemoved = createAction("bugRemoved")
+    export const bugResolved = createAction("bugResolved")
+
+    This replaces the actions and actionTypes
+
+3. createReducer
+    Traditionally we create Reducers using switch cases or if and else statements.
+    let lastID = 0;
+    const reducer = (state=[], action) => {
+        switch (action.type){
+            case "bugAdded":
+                return [
+                    ...state,
+                    {
+                        id:++lastID,
+                        description: action.payload.description,
+                        resolved:false
+                    }
+                ]
+            case "bugRemoved":
+                return state.filter(bug => bug.id !== action.payload.id)
+            case "bugResolved":
+                return state.map(bug =>
+                    bug.id !== action.payload.id ? bug : {...bug, resolved:true})
+            default:
+                return state
+        }
+    }
+    using createReducer,
+    we call the function, it takes two arguments; the initial state and an object that map actions to the actioncreators(functions that handle those actions).
+    let lastID = 0;
+
+    createReducer([], {
+        [bugAdded.type] :(state, action) => {
+            state.push({
+                id:++lastID,
+                description: action.payload.description,
+                resolved:false
+            })
+        },
+        [bugResolved.type] : (state, action) => {
+            const index = state.findIndex(bug => bug.id === action.payload.id);
+            state[index].resolved = true;
+        },
+        [bugRemoved.type]: (state, action) => {
+            state.pop(bug => bug.id === action.payload.id)
+        }
+    })
+
+
+4. createSlice 
+This automatically creates actions, actionTypes and Reducers for us.
+
+createSlice takes 3 arguments; name, initial state and reducer
+    import {createSlice } from '@reduxjs/toolkit';
+    let lastID = 0;
+
+    const slice = createSlice({
+        initialState: [],
+        name: "bugs",
+        reducer: {
+            bugAdded : (state, action) => {
+                state.push({
+                id:++lastID,
+                description: action.payload.description,
+                resolved:false
+            })
+            },
+            bugResolved : (state, action) => {
+                const index = state.findIndex(bug => bug.id === action.payload.id);
+                state[index].resolved = true;
+            } ,
+            bugRemoved : (state, action) => {
+                state.pop(bug => bug.id === action.payload.id)
+            }
+        } 
+    })
+
+with createSlice, we don't need to create actions and reducers separately

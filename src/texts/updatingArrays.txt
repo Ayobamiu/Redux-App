@@ -1,0 +1,36 @@
+To update Array and maintain Immutability.
+
+const numbers = [1,2,3,4]
+
+//Adding 5 & 6
+const added = [...numbers, 5,6]
+console.log(added);
+
+//Removing 3
+const removed = numbers.filter(n => n != 2)
+console.log(removed);
+
+//Updating (replace 2 with 20)
+const updated = numbers.map(n => n===2 ? 20 : n) //if n= 2, return 20, else, return n
+console.log(updated);
+
+Using Libraries that offer real immutable structures
+
+Immer;
+
+import { produce } from 'immer';
+
+let usman = {
+    name: "Usman",
+    age : 24
+}
+
+const reProduce = (usman) => {
+    return produce(usman, uthman => {
+        uthman.name = "Uthman"
+    })
+}
+const uthman = reProduce(usman);
+
+console.log(usman); //{name: "Usman", age: 24}
+console.log(uthman); //{name: "Uthman", age: 24}

@@ -1,0 +1,124 @@
+Store; where we store the states of our App, we can't Mutate the store directly
+Reducer; changes the content of the state by returning an updated copy of the store,
+    it takes the store as an argument and returns the updated store
+
+To update the state, we use the spread operator or the immutability libraries
+
+e.g.
+function reducer(store){
+    return updated = {store}
+}
+
+How does the reducer know what to update in the store?
+We pass a seccond argument, action
+
+function reducer(store, action){
+    return updated = {store}
+}
+
+Action: defines the recent event and the change to follow it
+e.g.
+acton = {
+    type: "bugAdded",
+    payload:{
+        id:1
+    }
+}
+payload contains all the needed data about an action
+
+
+Steps to build a Redux Application
+- Design the store - decide what to keep in the store
+- Define the actions - what are the actions the user can perform
+                        in this application?
+- Create One or more reducers - they take actions and return
+                                updated state
+- Set up the store base on the Reducer
+
+
+Building a Bug tracking Apllication with Redux
+- Design (Step 1)
+
+bugs = [
+    {
+        id: 1,
+        description: "",
+        resolved: false
+    },
+    {...},
+    {...},
+]
+
+-Actions (Step 2) 
+--  1. Add a Bug - "bugAdded"
+    2. Delete a Bug  - "bugRemoved"
+    3. Mark a Bug as Resolved - "bugResolved"
+ 
+the simple form of an action is 
+{
+    type: "bugRemoved",
+    payload:{
+        id:1
+    }
+}
+type: describe the action
+payload: all the info required to carry out the action
+
+- Reducer (Step 3)
+
+const lastID = 0;
+
+function reducer (state = [], action) {
+    switch (action.type) {
+        case "bugAdded" :
+            return [
+                ...state,
+                {
+                    id: ++lastID,
+                    description: action.payload.description,
+                    resolved: false
+                }
+            ]
+        case "bugRemoved":
+            return state.filter(bug => bug.id !== action.payload.id)
+        case "bugResolved":
+            return state.map(bug => 
+                bug.id !== action.payload.id ? bug :
+                {...bug, resolved:true}
+                )
+        default:
+            return state
+    }
+}
+
+- Store (Step 4)
+
+import reducer from 'reducer';
+import { createStore } from 'redux';
+ 
+export const store = createStore(reducer);
+
+Dispatching Actions (dispatch: method of the store)
+
+import store from 'store';
+
+store.dispatch({
+    type: "bugAdded",
+    payload:{
+        description: "first Bug"
+    }
+});
+
+store.dispatch({
+    type: "bugRemoved",
+    payload:{
+        id:1
+    }
+});
+
+Subscribing to the store(Subscribe: method of the store)
+store.subscribe(() => {
+    console.log(store.getState());
+    
+})
+it get called anytime an ation is dispatched    

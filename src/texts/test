@@ -1,0 +1,5 @@
+Unit test - testing our app without its external dependencies i.e server, databases and files
+In Unit test, we use mock API and mock Data. This makes our testing fast.
+
+integration test - testing our app with its external dependencies
+end-to-end test - testing our app when we ship it to the users and driving it through the user interface

@@ -1,0 +1,34 @@
+This are functions used to make custom queries. 
+Selector is a function that takes the state as argument and return a computed state. 
+i.e in our bug app, to get unresolved bugs.
+
+after the createSlice function,
+
+we can define, 
+
+export const getUnresolvedBugs = (state) => {
+    state.filter(bug => bug.resolved === false)
+}
+
+The problem with Selector is that it returns new results everytime we call it.
+i.e.
+
+const x = getUnresolvedBugs(state.getState());
+const y = getUnresolvedBugs(state.getState());
+console.log(x===y); // false
+
+And we don't want our query to return new result if our state has not changed
+
+Memoization 
+    is a process of caching input and output
+
+    import { createSelector } from 'reselect';
+
+    const getUnresolvedBugs = createSelector(
+        state => state.bugs, //output of this function is input for the next function
+        bugs => bugs.filter(bug => !bug.resolved)
+        
+    )
+    const x = getUnresolvedBugs(state.getState());
+    const y = getUnresolvedBugs(state.getState());
+    console.log(x===y); // true
